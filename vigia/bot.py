@@ -2,7 +2,7 @@
 
 import logging
 
-from telegram import Update
+from telegram import BotCommand, Update
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, ContextTypes
 
@@ -23,6 +23,22 @@ BIENVENIDA = (
     "/parar — dejar de recibir avisos\n\n"
     f"<i>{signals.DISCLAIMER}</i>"
 )
+
+
+# Menú "/" de Telegram: se registra en cada arranque, así el menú y los
+# handlers nunca se desalinean.
+COMANDOS = [
+    BotCommand("start", "Presentación y ayuda"),
+    BotCommand("estado", "Lectura actual de los indicadores"),
+    BotCommand("senal", "Señal vigente ahora mismo"),
+    BotCommand("suscribir", "Aviso en cada cambio de régimen"),
+    BotCommand("parar", "Dejar de recibir avisos"),
+]
+
+
+async def _registrar_comandos(application: Application) -> None:
+    await application.bot.set_my_commands(COMANDOS)
+    log.info("Menú de comandos registrado en Telegram (%d comandos)", len(COMANDOS))
 
 
 async def _evaluar(config: Config) -> regime.Regimen:
@@ -108,7 +124,12 @@ def run(config: Config) -> None:
     if not config.demo and not config.fred_api_key:
         raise SystemExit("Falta FRED_API_KEY (gratis en fred.stlouisfed.org).")
 
-    application = Application.builder().token(config.telegram_token).build()
+    application = (
+        Application.builder()
+        .token(config.telegram_token)
+        .post_init(_registrar_comandos)
+        .build()
+    )
     application.bot_data["config"] = config
     application.bot_data["estado"] = Estado.cargar(config.ruta_estado)
 
