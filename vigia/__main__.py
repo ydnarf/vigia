@@ -40,6 +40,8 @@ def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s"
     )
+    # httpx loguea cada URL en INFO, y la de FRED lleva la api_key: siléncialo.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     parser = argparse.ArgumentParser(prog="vigia", description=__doc__)
     parser.add_argument("--once", action="store_true",
                         help="evalúa el régimen una vez, imprime y sale")
